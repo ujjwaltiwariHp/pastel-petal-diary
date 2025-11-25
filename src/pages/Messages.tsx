@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,64 +6,91 @@ import { Textarea } from "@/components/ui/textarea";
 import { Heart, Send, Trash2 } from "lucide-react";
 import FloralDecoration from "@/components/FloralDecoration";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   id: string;
   name: string;
   message: string;
-  date: string;
-  emoji: string;
+  created_at: string;
 }
 
 const Messages = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      name: "Sarah",
-      message: "Your diary entries are so inspiring! Keep spreading positivity 🌸",
-      date: "2024-01-15",
-      emoji: "💕",
-    },
-    {
-      id: "2",
-      name: "Emma",
-      message: "Love your aesthetic! Where did you find that cute stationery?",
-      date: "2024-01-14",
-      emoji: "✨",
-    },
-  ]);
-
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState({
     name: "",
     message: "",
-    emoji: "💕",
   });
 
-  const emojis = ["💕", "✨", "🌸", "🌈", "⭐", "🦋", "🌙", "💫"];
+  useEffect(() => {
+    if (user) {
+      fetchMessages();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
-  const handleSendMessage = () => {
+  const fetchMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      toast.error("Failed to load messages");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
     if (!newMessage.name.trim() || !newMessage.message.trim()) {
       toast.error("Please fill in all fields! 🌸");
       return;
     }
 
-    setMessages([
-      {
-        id: Date.now().toString(),
-        ...newMessage,
-        date: new Date().toISOString(),
-      },
-      ...messages,
-    ]);
+    try {
+      const { error } = await supabase.from("messages").insert({
+        name: newMessage.name,
+        message: newMessage.message,
+      });
 
-    setNewMessage({ name: "", message: "", emoji: "💕" });
-    toast.success("Message sent! 💌");
+      if (error) throw error;
+
+      if (user) {
+        await fetchMessages();
+      }
+      setNewMessage({ name: "", message: "" });
+      toast.success("Message sent! 💌");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setMessages(messages.filter((m) => m.id !== id));
-    toast.success("Message deleted 🗑️");
+  const handleDelete = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase.from("messages").delete().eq("id", id);
+      if (error) throw error;
+      await fetchMessages();
+      toast.success("Message deleted 🗑️");
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast.error("Failed to delete message");
+    }
   };
+
+  const emojis = ["💕", "✨", "🌸", "🌈", "⭐", "🦋", "🌙", "💫"];
+  const getRandomEmoji = () => emojis[Math.floor(Math.random() * emojis.length)];
 
   return (
     <div className="min-h-screen pb-24 md:pt-20 px-4">
@@ -101,25 +128,6 @@ const Messages = () => {
 
             <div>
               <label className="text-sm font-rounded text-foreground mb-2 block">
-                Pick an emoji
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                {emojis.map((emoji) => (
-                  <Button
-                    key={emoji}
-                    variant={newMessage.emoji === emoji ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setNewMessage({ ...newMessage, emoji })}
-                    className="text-2xl"
-                  >
-                    {emoji}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-rounded text-foreground mb-2 block">
                 Your Message
               </label>
               <Textarea
@@ -140,46 +148,68 @@ const Messages = () => {
           </div>
         </Card>
 
-        {/* Messages List */}
-        <div>
-          <h2 className="text-2xl font-handwriting font-bold text-foreground mb-4">
-            Messages ({messages.length})
-          </h2>
-          <div className="space-y-4">
-            {messages.map((msg) => (
-              <Card
-                key={msg.id}
-                className="p-6 shadow-card hover:shadow-soft transition-all bg-card/95 backdrop-blur-sm relative group"
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(msg.id)}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-
-                <div className="flex items-start gap-4">
-                  <div className="text-4xl">{msg.emoji}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-handwriting font-bold text-lg text-foreground">
-                        {msg.name}
-                      </h4>
-                      <span className="text-xs text-muted-foreground font-rounded">
-                        {new Date(msg.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-foreground/80 font-rounded leading-relaxed">
-                      {msg.message}
-                    </p>
-                  </div>
-                </div>
+        {/* Messages List - Only visible to owner */}
+        {user && (
+          <div>
+            <h2 className="text-2xl font-handwriting font-bold text-foreground mb-4">
+              Messages ({messages.length})
+            </h2>
+            {loading ? (
+              <div className="text-center py-8">Loading...</div>
+            ) : messages.length === 0 ? (
+              <Card className="p-12 text-center bg-muted/30">
+                <div className="text-6xl mb-4">💌</div>
+                <p className="text-muted-foreground font-rounded">
+                  No messages yet. Share your message box link!
+                </p>
               </Card>
-            ))}
+            ) : (
+              <div className="space-y-4">
+                {messages.map((msg) => (
+                  <Card
+                    key={msg.id}
+                    className="p-6 shadow-card hover:shadow-soft transition-all bg-card/95 backdrop-blur-sm relative group"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(msg.id)}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+
+                    <div className="flex items-start gap-4">
+                      <div className="text-4xl">{getRandomEmoji()}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-handwriting font-bold text-lg text-foreground">
+                            {msg.name}
+                          </h4>
+                          <span className="text-xs text-muted-foreground font-rounded">
+                            {new Date(msg.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-foreground/80 font-rounded leading-relaxed">
+                          {msg.message}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
+
+        {!user && (
+          <Card className="p-8 text-center bg-muted/30">
+            <div className="text-6xl mb-4">💌</div>
+            <p className="text-muted-foreground font-rounded">
+              Thank you for your message! The owner will see it soon. 🌸
+            </p>
+          </Card>
+        )}
       </div>
     </div>
   );
