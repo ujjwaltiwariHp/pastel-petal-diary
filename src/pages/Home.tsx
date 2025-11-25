@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,20 +7,73 @@ import { Heart, Instagram, Twitter, Mail, Edit2, Save } from "lucide-react";
 import FloralDecoration from "@/components/FloralDecoration";
 import heroBg from "@/assets/hero-bg.png";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Home = () => {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
     name: "Your Name ✿",
-    bio: "Welcome to my little corner of the internet! 🌸 I love capturing beautiful moments, traveling to dreamy places, and sharing my daily adventures. Join me on this journey!",
+    bio: "Welcome to my little corner of the internet! 🌸",
     location: "🌍 Somewhere magical",
     hobbies: "✨ Photography, Travel, Writing, Art",
   });
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast.success("Profile updated! 🌸");
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setProfile({
+          name: data.name || "Your Name ✿",
+          bio: data.bio || "",
+          location: data.location || "",
+          hobbies: data.hobbies || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSave = async () => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          name: profile.name,
+          bio: profile.bio,
+          location: profile.location,
+          hobbies: profile.hobbies,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+      setIsEditing(false);
+      toast.success("Profile updated! 🌸");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen pb-24 md:pt-20">
@@ -88,15 +141,17 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Edit Button */}
-            <Button
-              onClick={isEditing ? handleSave : () => setIsEditing(true)}
-              variant={isEditing ? "default" : "outline"}
-              className="absolute top-4 right-4"
-            >
-              {isEditing ? <Save className="w-4 h-4 mr-2" /> : <Edit2 className="w-4 h-4 mr-2" />}
-              {isEditing ? "Save" : "Edit"}
-            </Button>
+            {/* Edit Button - Only for logged in owner */}
+            {user && (
+              <Button
+                onClick={isEditing ? handleSave : () => setIsEditing(true)}
+                variant={isEditing ? "default" : "outline"}
+                className="absolute top-4 right-4"
+              >
+                {isEditing ? <Save className="w-4 h-4 mr-2" /> : <Edit2 className="w-4 h-4 mr-2" />}
+                {isEditing ? "Save" : "Edit"}
+              </Button>
+            )}
           </div>
 
           {/* Bio */}
