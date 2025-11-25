@@ -1,8 +1,14 @@
-import { Home, BookHeart, MessageCircleQuestion, MessageSquare, Plane, CheckSquare } from "lucide-react";
+import { Home, BookHeart, MessageCircleQuestion, MessageSquare, Plane, CheckSquare, LogOut, LogIn } from "lucide-react";
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Button } from "./ui/button";
 
 const Navigation = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
   const navItems = [
     { to: "/", icon: Home, label: "Home" },
     { to: "/diary", icon: BookHeart, label: "Diary" },
@@ -30,6 +36,25 @@ const Navigation = () => {
               <span className="text-xs md:text-sm font-rounded">{item.label}</span>
             </NavLink>
           ))}
+          {user ? (
+            <Button
+              onClick={signOut}
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          ) : (
+            <Button
+              onClick={() => navigate("/auth")}
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+            >
+              <LogIn className="w-5 h-5" />
+            </Button>
+          )}
         </div>
       </div>
     </nav>
