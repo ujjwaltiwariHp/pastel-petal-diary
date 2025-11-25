@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Calendar, Heart } from "lucide-react";
+import { Plus, Calendar, Heart, Trash2 } from "lucide-react";
 import FloralDecoration from "@/components/FloralDecoration";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DiaryEntry {
   id: string;
@@ -16,23 +18,9 @@ interface DiaryEntry {
 }
 
 const Diary = () => {
-  const [entries, setEntries] = useState<DiaryEntry[]>([
-    {
-      id: "1",
-      date: "2024-01-15",
-      title: "A Beautiful Day ✨",
-      content: "Today was absolutely magical! Spent the afternoon at the park, surrounded by blooming flowers. The weather was perfect, and I felt so grateful for these simple moments.",
-      mood: "😊",
-    },
-    {
-      id: "2",
-      date: "2024-01-10",
-      title: "Coffee and Dreams ☕",
-      content: "Found a cozy new café today. The aesthetic was everything I dreamed of - pastel colors, fairy lights, and the most delicious lavender latte!",
-      mood: "💕",
-    },
-  ]);
-
+  const { user } = useAuth();
+  const [entries, setEntries] = useState<DiaryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newEntry, setNewEntry] = useState({
     title: "",
@@ -40,27 +28,78 @@ const Diary = () => {
     mood: "😊",
   });
 
-  const handleAddEntry = () => {
+  useEffect(() => {
+    fetchEntries();
+  }, []);
+
+  const fetchEntries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("diary_entries")
+        .select("*")
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      setEntries(data || []);
+    } catch (error) {
+      console.error("Error fetching entries:", error);
+      toast.error("Failed to load entries");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddEntry = async () => {
+    if (!user) {
+      toast.error("Please sign in to add entries! 🌸");
+      return;
+    }
+
     if (!newEntry.title || !newEntry.content) {
       toast.error("Please fill in all fields! 🌸");
       return;
     }
 
-    setEntries([
-      {
-        id: Date.now().toString(),
+    try {
+      const { error } = await supabase.from("diary_entries").insert({
+        user_id: user.id,
+        title: newEntry.title,
+        content: newEntry.content,
+        mood: newEntry.mood,
         date: new Date().toISOString().split("T")[0],
-        ...newEntry,
-      },
-      ...entries,
-    ]);
+      });
 
-    setNewEntry({ title: "", content: "", mood: "😊" });
-    setIsAdding(false);
-    toast.success("Entry added! 📝✨");
+      if (error) throw error;
+
+      await fetchEntries();
+      setNewEntry({ title: "", content: "", mood: "😊" });
+      setIsAdding(false);
+      toast.success("Entry added! 📝✨");
+    } catch (error) {
+      console.error("Error adding entry:", error);
+      toast.error("Failed to add entry");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase.from("diary_entries").delete().eq("id", id);
+      if (error) throw error;
+      await fetchEntries();
+      toast.success("Entry deleted! 🗑️");
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+      toast.error("Failed to delete entry");
+    }
   };
 
   const moods = ["😊", "💕", "🌸", "✨", "🌈", "☀️", "🌙", "💫"];
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen pb-24 md:pt-20 px-4">
@@ -76,8 +115,8 @@ const Diary = () => {
           <FloralDecoration variant="top-right" className="hidden md:block" />
         </div>
 
-        {/* Add Entry Button */}
-        {!isAdding && (
+        {/* Add Entry Button - Only for owner */}
+        {user && !isAdding && (
           <Button
             onClick={() => setIsAdding(true)}
             className="w-full mb-6 bg-primary hover:bg-primary/90 text-primary-foreground font-rounded"
@@ -153,41 +192,61 @@ const Diary = () => {
 
         {/* Entries List */}
         <div className="space-y-6">
-          {entries.map((entry) => (
-            <Card
-              key={entry.id}
-              className="p-6 shadow-card hover:shadow-soft transition-all bg-card/95 backdrop-blur-sm relative overflow-hidden group"
-            >
-              <div className="absolute top-4 right-4 text-3xl group-hover:scale-110 transition-transform">
-                {entry.mood}
-              </div>
-
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 font-rounded">
-                <Calendar className="w-4 h-4" />
-                {new Date(entry.date).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </div>
-
-              <h3 className="text-2xl font-handwriting font-bold text-foreground mb-3">
-                {entry.title}
-              </h3>
-
-              <p className="text-foreground/80 leading-relaxed font-rounded whitespace-pre-wrap">
-                {entry.content}
+          {entries.length === 0 ? (
+            <Card className="p-12 text-center bg-muted/30">
+              <div className="text-6xl mb-4">📔</div>
+              <p className="text-muted-foreground font-rounded">
+                No diary entries yet. {user ? "Add your first entry!" : "Check back soon!"}
               </p>
-
-              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Like
-                </Button>
-              </div>
             </Card>
-          ))}
+          ) : (
+            entries.map((entry) => (
+              <Card
+                key={entry.id}
+                className="p-6 shadow-card hover:shadow-soft transition-all bg-card/95 backdrop-blur-sm relative overflow-hidden group"
+              >
+                <div className="absolute top-4 right-4 text-3xl group-hover:scale-110 transition-transform">
+                  {entry.mood}
+                </div>
+
+                {user && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(entry.id)}
+                    className="absolute top-4 right-16 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 font-rounded">
+                  <Calendar className="w-4 h-4" />
+                  {new Date(entry.date).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </div>
+
+                <h3 className="text-2xl font-handwriting font-bold text-foreground mb-3">
+                  {entry.title}
+                </h3>
+
+                <p className="text-foreground/80 leading-relaxed font-rounded whitespace-pre-wrap">
+                  {entry.content}
+                </p>
+
+                <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                  <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
+                    <Heart className="w-4 h-4 mr-2" />
+                    Like
+                  </Button>
+                </div>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>

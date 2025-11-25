@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,66 +6,117 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Star } from "lucide-react";
 import FloralDecoration from "@/components/FloralDecoration";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Task {
   id: string;
   title: string;
   completed: boolean;
   category: "daily" | "weekly" | "monthly";
-  sticker?: string;
 }
 
 const Tasks = () => {
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: "1", title: "Write in diary", completed: true, category: "daily", sticker: "📝" },
-    { id: "2", title: "Water plants", completed: false, category: "daily", sticker: "🌱" },
-    { id: "3", title: "Plan weekend trip", completed: false, category: "weekly", sticker: "✈️" },
-    { id: "4", title: "Update travel blog", completed: true, category: "weekly", sticker: "💻" },
-  ]);
-
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState("");
   const [activeCategory, setActiveCategory] = useState<"daily" | "weekly" | "monthly">("daily");
 
-  const handleAddTask = () => {
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setTasks((data || []).map(task => ({
+        id: task.id,
+        title: task.title,
+        completed: task.completed,
+        category: task.category as "daily" | "weekly" | "monthly"
+      })));
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      toast.error("Failed to load tasks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTask = async () => {
+    if (!user) {
+      toast.error("Please sign in to add tasks! 🌸");
+      return;
+    }
+
     if (!newTask.trim()) {
       toast.error("Please enter a task! 📋");
       return;
     }
 
-    const stickers = ["⭐", "🌸", "💕", "✨", "🌈", "🦋", "☀️", "🌙"];
-    const randomSticker = stickers[Math.floor(Math.random() * stickers.length)];
-
-    setTasks([
-      ...tasks,
-      {
-        id: Date.now().toString(),
+    try {
+      const { error } = await supabase.from("tasks").insert({
+        user_id: user.id,
         title: newTask,
-        completed: false,
         category: activeCategory,
-        sticker: randomSticker,
-      },
-    ]);
+        completed: false,
+      });
 
-    setNewTask("");
-    toast.success("Task added! 🎉");
+      if (error) throw error;
+
+      await fetchTasks();
+      setNewTask("");
+      toast.success("Task added! 🎉");
+    } catch (error) {
+      console.error("Error adding task:", error);
+      toast.error("Failed to add task");
+    }
   };
 
-  const handleToggleTask = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
-    toast.success("Task updated! ✨");
+  const handleToggleTask = async (id: string, completed: boolean) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ completed: !completed })
+        .eq("id", id);
+
+      if (error) throw error;
+      await fetchTasks();
+      toast.success("Task updated! ✨");
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast.error("Failed to update task");
+    }
   };
 
-  const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter((task) => task.id !== id));
-    toast.success("Task deleted! 🗑️");
+  const handleDeleteTask = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase.from("tasks").delete().eq("id", id);
+      if (error) throw error;
+      await fetchTasks();
+      toast.success("Task deleted! 🗑️");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      toast.error("Failed to delete task");
+    }
   };
 
   const filteredTasks = tasks.filter((task) => task.category === activeCategory);
   const completedCount = filteredTasks.filter((t) => t.completed).length;
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen pb-24 md:pt-20 px-4">
@@ -120,21 +171,23 @@ const Tasks = () => {
           </div>
         </Card>
 
-        {/* Add Task */}
-        <Card className="p-6 mb-6 shadow-card">
-          <div className="flex gap-2">
-            <Input
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              placeholder="Add a new task..."
-              className="flex-1 font-rounded"
-              onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
-            />
-            <Button onClick={handleAddTask}>
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-        </Card>
+        {/* Add Task - Only for owner */}
+        {user && (
+          <Card className="p-6 mb-6 shadow-card">
+            <div className="flex gap-2">
+              <Input
+                value={newTask}
+                onChange={(e) => setNewTask(e.target.value)}
+                placeholder="Add a new task..."
+                className="flex-1 font-rounded"
+                onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
+              />
+              <Button onClick={handleAddTask}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Tasks List */}
         <div className="space-y-3">
@@ -142,7 +195,7 @@ const Tasks = () => {
             <Card className="p-12 text-center bg-muted/30">
               <div className="text-6xl mb-4">📝</div>
               <p className="text-muted-foreground font-rounded">
-                No tasks yet. Add one to get started!
+                {user ? "No tasks yet. Add one to get started!" : "No tasks yet. Check back soon!"}
               </p>
             </Card>
           ) : (
@@ -154,12 +207,12 @@ const Tasks = () => {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={task.completed}
-                    onCheckedChange={() => handleToggleTask(task.id)}
-                  />
-                  
-                  <span className="text-2xl">{task.sticker}</span>
+                  {user && (
+                    <Checkbox
+                      checked={task.completed}
+                      onCheckedChange={() => handleToggleTask(task.id, task.completed)}
+                    />
+                  )}
                   
                   <span
                     className={`flex-1 font-rounded ${
@@ -175,14 +228,16 @@ const Tasks = () => {
                     <Star className="w-5 h-5 text-soft-yellow fill-soft-yellow" />
                   )}
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteTask(task.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {user && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </Card>
             ))
