@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      anonymous_game_questions: {
+        Row: {
+          answer_text: string | null
+          asker_ip: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          is_answered: boolean | null
+          is_public: boolean | null
+          question_text: string
+          updated_at: string | null
+        }
+        Insert: {
+          answer_text?: string | null
+          asker_ip?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_answered?: boolean | null
+          is_public?: boolean | null
+          question_text: string
+          updated_at?: string | null
+        }
+        Update: {
+          answer_text?: string | null
+          asker_ip?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_answered?: boolean | null
+          is_public?: boolean | null
+          question_text?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       diary_entries: {
         Row: {
           content: string
@@ -47,6 +83,39 @@ export type Database = {
         }
         Relationships: []
       }
+      media_uploads: {
+        Row: {
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          file_type: string
+          file_url: string
+          id: string
+          upload_date: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          file_type: string
+          file_url: string
+          id?: string
+          upload_date?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          upload_date?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           created_at: string | null
@@ -68,38 +137,118 @@ export type Database = {
         }
         Relationships: []
       }
+      post_comments: {
+        Row: {
+          comment_text: string
+          commenter_name: string | null
+          created_at: string | null
+          id: string
+          is_hidden: boolean | null
+          parent_comment_id: string | null
+          post_id: string
+          post_type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          comment_text: string
+          commenter_name?: string | null
+          created_at?: string | null
+          id?: string
+          is_hidden?: boolean | null
+          parent_comment_id?: string | null
+          post_id: string
+          post_type: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          comment_text?: string
+          commenter_name?: string | null
+          created_at?: string | null
+          id?: string
+          is_hidden?: boolean | null
+          parent_comment_id?: string | null
+          post_id?: string
+          post_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          post_id: string
+          post_type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          post_id: string
+          post_type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          post_id?: string
+          post_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
+          cover_photo_url: string | null
           created_at: string | null
           hobbies: string | null
           id: string
           is_owner: boolean | null
           location: string | null
           name: string
+          profile_picture_url: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          cover_photo_url?: string | null
           created_at?: string | null
           hobbies?: string | null
           id: string
           is_owner?: boolean | null
           location?: string | null
           name: string
+          profile_picture_url?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          cover_photo_url?: string | null
           created_at?: string | null
           hobbies?: string | null
           id?: string
           is_owner?: boolean | null
           location?: string | null
           name?: string
+          profile_picture_url?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -133,6 +282,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      social_links: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_visible: boolean | null
+          platform: string
+          profile_id: string
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_visible?: boolean | null
+          platform: string
+          profile_id: string
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_visible?: boolean | null
+          platform?: string
+          profile_id?: string
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_links_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
@@ -200,15 +390,76 @@ export type Database = {
         }
         Relationships: []
       }
+      truth_dare_questions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          difficulty_level: string | null
+          id: string
+          is_active: boolean | null
+          question_text: string
+          question_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          difficulty_level?: string | null
+          id?: string
+          is_active?: boolean | null
+          question_text: string
+          question_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          difficulty_level?: string | null
+          id?: string
+          is_active?: boolean | null
+          question_text?: string
+          question_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "visitor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -335,6 +586,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "visitor"],
+    },
   },
 } as const
