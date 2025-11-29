@@ -12,6 +12,9 @@ import QnA from "./pages/QnA";
 import Messages from "./pages/Messages";
 import Navigation from "./components/Navigation";
 import Auth from "./pages/Auth";
+import Games from "./pages/Games";
+import TruthDare from "./pages/TruthDare";
+import AnonymousQuestions from "./pages/AnonymousQuestions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +35,9 @@ const App = () => (
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/qna" element={<QnA />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/games" element={<Games />} />
+              <Route path="/games/truth-dare" element={<TruthDare />} />
+              <Route path="/games/anonymous-questions" element={<AnonymousQuestions />} />
               <Route path="/auth" element={<Auth />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
