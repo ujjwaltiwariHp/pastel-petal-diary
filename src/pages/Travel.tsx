@@ -8,6 +8,9 @@ import FloralDecoration from "@/components/FloralDecoration";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { ImageUploader } from "@/components/ImageUploader";
+import { LikeButton } from "@/components/LikeButton";
+import { CommentSection } from "@/components/CommentSection";
 
 interface TravelPost {
   id: string;
@@ -26,6 +29,7 @@ const Travel = () => {
     destination: "",
     date: "",
     description: "",
+    images: [] as string[],
   });
 
   useEffect(() => {
@@ -71,7 +75,7 @@ const Travel = () => {
       if (error) throw error;
 
       await fetchTrips();
-      setNewTrip({ destination: "", date: "", description: "" });
+      setNewTrip({ destination: "", date: "", description: "", images: [] });
       setIsAdding(false);
       toast.success("Trip added! ✈️✨");
     } catch (error) {
@@ -183,6 +187,18 @@ const Travel = () => {
                 />
               </div>
 
+              <div>
+                <label className="text-sm font-rounded text-foreground mb-2 block">
+                  Photos (optional)
+                </label>
+                <ImageUploader
+                  bucket="travel-images"
+                  onUploadComplete={(urls) => setNewTrip({ ...newTrip, images: urls })}
+                  maxFiles={5}
+                  existingImages={newTrip.images}
+                />
+              </div>
+
               <div className="flex gap-2">
                 <Button onClick={handleAddTrip} className="flex-1">
                   Save Trip
@@ -235,9 +251,9 @@ const Travel = () => {
                   {trip.description}
                 </p>
 
-                <div className="mt-4 pt-4 border-t border-border flex items-center text-sm text-primary font-rounded">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  View memories
+                <div className="mt-4 pt-4 border-t border-border">
+                  <LikeButton postType="travel" postId={trip.id} />
+                  <CommentSection postType="travel" postId={trip.id} />
                 </div>
               </div>
             </Card>

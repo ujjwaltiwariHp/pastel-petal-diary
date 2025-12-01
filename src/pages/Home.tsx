@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Instagram, Twitter, Mail, Edit2, Save } from "lucide-react";
+import { Heart, Edit2, Save } from "lucide-react";
 import FloralDecoration from "@/components/FloralDecoration";
 import heroBg from "@/assets/hero-bg.png";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { SocialLinksDisplay } from "@/components/SocialLinksDisplay";
 
 const Home = () => {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ const Home = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
+        .eq("is_owner", true)
         .single();
 
       if (error) throw error;
@@ -128,17 +130,7 @@ const Home = () => {
                 <p className="text-muted-foreground mb-4 font-rounded">{profile.location}</p>
               )}
 
-              <div className="flex gap-4 justify-center md:justify-start">
-                <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10">
-                  <Instagram className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="sm" className="text-secondary hover:text-secondary hover:bg-secondary/10">
-                  <Twitter className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="sm" className="text-accent hover:text-accent hover:bg-accent/10">
-                  <Mail className="w-5 h-5" />
-                </Button>
-              </div>
+              {user && <SocialLinksDisplay profileId={user.id} />}
             </div>
 
             {/* Edit Button - Only for logged in owner */}
