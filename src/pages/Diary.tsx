@@ -3,11 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Calendar, Heart, Trash2 } from "lucide-react";
+import { Plus, Calendar, Trash2 } from "lucide-react";
 import FloralDecoration from "@/components/FloralDecoration";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { ImageUploader } from "@/components/ImageUploader";
+import { LikeButton } from "@/components/LikeButton";
+import { CommentSection } from "@/components/CommentSection";
 
 interface DiaryEntry {
   id: string;
@@ -26,6 +29,7 @@ const Diary = () => {
     title: "",
     content: "",
     mood: "😊",
+    images: [] as string[],
   });
 
   useEffect(() => {
@@ -72,7 +76,7 @@ const Diary = () => {
       if (error) throw error;
 
       await fetchEntries();
-      setNewEntry({ title: "", content: "", mood: "😊" });
+      setNewEntry({ title: "", content: "", mood: "😊", images: [] });
       setIsAdding(false);
       toast.success("Entry added! 📝✨");
     } catch (error) {
@@ -178,6 +182,18 @@ const Diary = () => {
                 />
               </div>
 
+              <div>
+                <label className="text-sm font-rounded text-foreground mb-2 block">
+                  Photos (optional)
+                </label>
+                <ImageUploader
+                  bucket="diary-images"
+                  onUploadComplete={(urls) => setNewEntry({ ...newEntry, images: urls })}
+                  maxFiles={5}
+                  existingImages={newEntry.images}
+                />
+              </div>
+
               <div className="flex gap-2">
                 <Button onClick={handleAddEntry} className="flex-1">
                   Save Entry
@@ -238,11 +254,9 @@ const Diary = () => {
                   {entry.content}
                 </p>
 
-                <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                  <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
-                    <Heart className="w-4 h-4 mr-2" />
-                    Like
-                  </Button>
+                <div className="mt-4 pt-4 border-t border-border">
+                  <LikeButton postType="diary" postId={entry.id} />
+                  <CommentSection postType="diary" postId={entry.id} />
                 </div>
               </Card>
             ))
