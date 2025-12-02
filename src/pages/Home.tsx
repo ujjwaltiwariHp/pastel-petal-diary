@@ -146,36 +146,8 @@ const Home = () => {
 
   return (
     <div className="min-h-screen pb-24 md:pt-20">
-      {/* Floating Navigation */}
-      <nav className="hidden md:block fixed top-24 left-8 z-40">
-        <div className="flex flex-col gap-2 bg-card/80 backdrop-blur-lg p-4 rounded-2xl border border-border shadow-soft">
-          {[
-            { id: "profile", icon: Heart, label: "Profile" },
-            { id: "diary", icon: BookHeart, label: "Diary" },
-            { id: "travel", icon: Plane, label: "Travel" },
-            { id: "tasks", icon: CheckSquare, label: "Tasks" },
-            { id: "qna", icon: MessageCircleQuestion, label: "Q&A" },
-            { id: "messages", icon: MessageSquare, label: "Messages" },
-            { id: "games", icon: Gamepad2, label: "Games" },
-          ].map((item) => (
-            <a
-              key={item.id}
-              href={`#${item.id}`}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                activeSection === item.id
-                  ? "bg-primary text-primary-foreground shadow-soft"
-                  : "text-muted-foreground hover:text-primary hover:bg-primary/10"
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="text-sm font-rounded whitespace-nowrap">{item.label}</span>
-            </a>
-          ))}
-        </div>
-      </nav>
-
       {/* Hero Section */}
-      <section id="profile" className="relative overflow-hidden scroll-mt-20">
+      <section id="profile" className="relative overflow-hidden scroll-mt-20 md:scroll-mt-24">
         <div 
           className="h-64 md:h-80 bg-cover bg-center"
           style={{ backgroundImage: `url(${coverImage})` }}
@@ -279,7 +251,7 @@ const Home = () => {
       </section>
 
       {/* Diary Section */}
-      <section id="diary" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20">
+      <section id="diary" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20 md:scroll-mt-24">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-handwriting font-bold text-foreground flex items-center gap-2">
             <BookHeart className="w-8 h-8 text-primary" />
@@ -314,7 +286,7 @@ const Home = () => {
       </section>
 
       {/* Travel Section */}
-      <section id="travel" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20">
+      <section id="travel" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20 md:scroll-mt-24">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-handwriting font-bold text-foreground flex items-center gap-2">
             <Plane className="w-8 h-8 text-primary" />
@@ -350,7 +322,7 @@ const Home = () => {
       </section>
 
       {/* Tasks Section */}
-      <section id="tasks" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20">
+      <section id="tasks" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20 md:scroll-mt-24">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-handwriting font-bold text-foreground flex items-center gap-2">
             <CheckSquare className="w-8 h-8 text-primary" />
@@ -381,7 +353,7 @@ const Home = () => {
       </section>
 
       {/* Q&A Section */}
-      <section id="qna" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20">
+      <section id="qna" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20 md:scroll-mt-24">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-handwriting font-bold text-foreground flex items-center gap-2">
             <MessageCircleQuestion className="w-8 h-8 text-primary" />
@@ -408,7 +380,7 @@ const Home = () => {
 
       {/* Messages Section */}
       {isAdmin && messages.length > 0 && (
-        <section id="messages" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20">
+        <section id="messages" className="max-w-4xl mx-auto px-4 mt-16 scroll-mt-20 md:scroll-mt-24">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-handwriting font-bold text-foreground flex items-center gap-2">
               <MessageSquare className="w-8 h-8 text-primary" />
@@ -432,7 +404,7 @@ const Home = () => {
       )}
 
       {/* Games Section */}
-      <section id="games" className="max-w-4xl mx-auto px-4 mt-16 mb-16 scroll-mt-20">
+      <section id="games" className="max-w-4xl mx-auto px-4 mt-16 mb-16 scroll-mt-20 md:scroll-mt-24">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-handwriting font-bold text-foreground flex items-center gap-2">
             <Gamepad2 className="w-8 h-8 text-primary" />
