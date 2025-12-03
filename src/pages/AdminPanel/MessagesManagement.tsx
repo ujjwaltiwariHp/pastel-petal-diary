@@ -2,16 +2,18 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Search } from "lucide-react";
+import { Trash2, Search, Loader2, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const MessagesManagement = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [filteredMessages, setFilteredMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -49,14 +51,17 @@ export const MessagesManagement = () => {
   };
 
   const handleDelete = async (id: string) => {
+    setDeleting(id);
     try {
       const { error } = await supabase.from("messages").delete().eq("id", id);
       if (error) throw error;
       toast.success("Message deleted!");
-      fetchMessages();
+      setMessages(messages.filter(m => m.id !== id));
     } catch (error) {
       console.error("Error deleting message:", error);
       toast.error("Failed to delete message");
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -71,7 +76,12 @@ export const MessagesManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <Card className="p-4">
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-muted-foreground" />
@@ -85,38 +95,60 @@ export const MessagesManagement = () => {
       </Card>
 
       <div className="space-y-4">
-        {filteredMessages.length === 0 ? (
-          <Card className="p-12 text-center">
-            <p className="text-muted-foreground">
-              {searchQuery ? "No messages found" : "No messages yet"}
-            </p>
-          </Card>
-        ) : (
-          filteredMessages.map((message) => (
-            <Card key={message.id} className="p-4">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-bold text-foreground">{message.name}</h4>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(message.created_at).toLocaleString()}
-                    </span>
+        <AnimatePresence>
+          {filteredMessages.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <Card className="p-12 text-center">
+                <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  {searchQuery ? "No messages found" : "No messages yet"}
+                </p>
+              </Card>
+            </motion.div>
+          ) : (
+            filteredMessages.map((message, index) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="p-4 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-bold text-foreground">{message.name}</h4>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(message.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-foreground/80">{message.message}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(message.id)}
+                      disabled={deleting === message.id}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      {deleting === message.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
-                  <p className="text-foreground/80">{message.message}</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(message.id)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </Card>
-          ))
-        )}
+                </Card>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 };
