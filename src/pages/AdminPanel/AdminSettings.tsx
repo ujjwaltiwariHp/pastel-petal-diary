@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploader } from "@/components/ImageUploader";
-import { SocialLinksDisplay } from "@/components/SocialLinksDisplay";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Save } from "lucide-react";
 
 export const AdminSettings = () => {
   const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({
     name: "",
     bio: "",
@@ -63,6 +63,7 @@ export const AdminSettings = () => {
 
   const handleUpdateProfile = async () => {
     if (!user) return;
+    setSaving(true);
     try {
       const { error } = await supabase
         .from("profiles")
@@ -74,18 +75,50 @@ export const AdminSettings = () => {
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleProfilePictureUpload = (urls: string[]) => {
-    if (urls.length > 0) {
-      setProfile({ ...profile, profile_picture_url: urls[0] });
+  // Auto-save profile picture immediately after upload
+  const handleProfilePictureUpload = async (urls: string[]) => {
+    if (!user || urls.length === 0) return;
+    
+    const newUrl = urls[0];
+    setProfile(prev => ({ ...prev, profile_picture_url: newUrl }));
+    
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ profile_picture_url: newUrl })
+        .eq("id", user.id);
+
+      if (error) throw error;
+      toast.success("Profile picture saved!");
+    } catch (error) {
+      console.error("Error saving profile picture:", error);
+      toast.error("Failed to save profile picture");
     }
   };
 
-  const handleCoverPhotoUpload = (urls: string[]) => {
-    if (urls.length > 0) {
-      setProfile({ ...profile, cover_photo_url: urls[0] });
+  // Auto-save cover photo immediately after upload
+  const handleCoverPhotoUpload = async (urls: string[]) => {
+    if (!user || urls.length === 0) return;
+    
+    const newUrl = urls[0];
+    setProfile(prev => ({ ...prev, cover_photo_url: newUrl }));
+    
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ cover_photo_url: newUrl })
+        .eq("id", user.id);
+
+      if (error) throw error;
+      toast.success("Cover photo saved!");
+    } catch (error) {
+      console.error("Error saving cover photo:", error);
+      toast.error("Failed to save cover photo");
     }
   };
 
@@ -95,10 +128,18 @@ export const AdminSettings = () => {
       return;
     }
 
+    // Validate URL
+    try {
+      new URL(newLink.url);
+    } catch {
+      toast.error("Please enter a valid URL");
+      return;
+    }
+
     try {
       const { error } = await supabase.from("social_links").insert({
         profile_id: user.id,
-        platform: newLink.platform,
+        platform: newLink.platform.toLowerCase(),
         url: newLink.url,
         display_order: socialLinks.length,
       });
@@ -126,6 +167,11 @@ export const AdminSettings = () => {
     }
   };
 
+  const platformOptions = [
+    "instagram", "twitter", "facebook", "linkedin", "github", 
+    "youtube", "tiktok", "pinterest", "discord", "website"
+  ];
+
   return (
     <div className="space-y-6">
       {/* Profile Information */}
@@ -139,63 +185,80 @@ export const AdminSettings = () => {
             <Input
               value={profile.name}
               onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              placeholder="Your display name"
             />
           </div>
           <div>
             <label className="text-sm font-rounded text-foreground mb-2 block">Bio</label>
             <Textarea
-              value={profile.bio}
+              value={profile.bio || ""}
               onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+              placeholder="Tell visitors about yourself..."
+              rows={3}
             />
           </div>
           <div>
             <label className="text-sm font-rounded text-foreground mb-2 block">Location</label>
             <Input
-              value={profile.location}
+              value={profile.location || ""}
               onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+              placeholder="🌍 Your location"
             />
           </div>
           <div>
             <label className="text-sm font-rounded text-foreground mb-2 block">Hobbies</label>
             <Input
-              value={profile.hobbies}
+              value={profile.hobbies || ""}
               onChange={(e) => setProfile({ ...profile, hobbies: e.target.value })}
+              placeholder="✨ Your hobbies and interests"
             />
           </div>
-          <Button onClick={handleUpdateProfile}>Save Changes</Button>
+          <Button onClick={handleUpdateProfile} disabled={saving} className="w-full">
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Profile
+              </>
+            )}
+          </Button>
         </div>
       </Card>
 
-      {/* Profile Picture */}
+      {/* Profile Picture - Auto-saves on upload */}
       <Card className="p-6">
-        <h3 className="text-xl font-handwriting font-bold text-foreground mb-4">
+        <h3 className="text-xl font-handwriting font-bold text-foreground mb-2">
           Profile Picture
         </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Upload a profile picture. It will be saved automatically.
+        </p>
         <ImageUploader
           bucket="profile-pictures"
           onUploadComplete={handleProfilePictureUpload}
           maxFiles={1}
           existingImages={profile.profile_picture_url ? [profile.profile_picture_url] : []}
         />
-        <Button onClick={handleUpdateProfile} className="mt-4">
-          Save Profile Picture
-        </Button>
       </Card>
 
-      {/* Cover Photo */}
+      {/* Cover Photo - Auto-saves on upload */}
       <Card className="p-6">
-        <h3 className="text-xl font-handwriting font-bold text-foreground mb-4">
+        <h3 className="text-xl font-handwriting font-bold text-foreground mb-2">
           Cover Photo
         </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Upload a cover photo for your profile header. It will be saved automatically.
+        </p>
         <ImageUploader
           bucket="profile-pictures"
           onUploadComplete={handleCoverPhotoUpload}
           maxFiles={1}
           existingImages={profile.cover_photo_url ? [profile.cover_photo_url] : []}
         />
-        <Button onClick={handleUpdateProfile} className="mt-4">
-          Save Cover Photo
-        </Button>
       </Card>
 
       {/* Social Links */}
@@ -203,57 +266,80 @@ export const AdminSettings = () => {
         <h3 className="text-xl font-handwriting font-bold text-foreground mb-4">
           Social Links
         </h3>
+        
+        {/* Existing links */}
+        {socialLinks.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {socialLinks.map((link) => (
+              <div key={link.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium capitalize">{link.platform}</span>
+                  <span className="text-sm text-muted-foreground ml-2 truncate block sm:inline">
+                    {link.url}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteSocialLink(link.id)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {user && <SocialLinksDisplay profileId={user.id} />}
+        {socialLinks.length === 0 && !isAddingLink && (
+          <p className="text-muted-foreground text-center py-4 mb-4">
+            No social links yet. Add your first link below!
+          </p>
+        )}
 
-        {!isAddingLink && (
-          <Button onClick={() => setIsAddingLink(true)} className="w-full mt-4">
+        {!isAddingLink ? (
+          <Button onClick={() => setIsAddingLink(true)} variant="outline" className="w-full">
             <Plus className="w-4 h-4 mr-2" />
             Add Social Link
           </Button>
-        )}
-
-        {isAddingLink && (
-          <div className="space-y-4 mt-4">
-            <Input
-              placeholder="Platform (e.g., instagram, twitter, github)"
-              value={newLink.platform}
-              onChange={(e) => setNewLink({ ...newLink, platform: e.target.value })}
-            />
-            <Input
-              placeholder="URL"
-              value={newLink.url}
-              onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-            />
+        ) : (
+          <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
+            <div>
+              <label className="text-sm font-rounded text-foreground mb-2 block">Platform</label>
+              <select
+                value={newLink.platform}
+                onChange={(e) => setNewLink({ ...newLink, platform: e.target.value })}
+                className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground"
+              >
+                <option value="">Select platform...</option>
+                {platformOptions.map((platform) => (
+                  <option key={platform} value={platform}>
+                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-rounded text-foreground mb-2 block">URL</label>
+              <Input
+                placeholder="https://..."
+                value={newLink.url}
+                onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+              />
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleAddSocialLink} className="flex-1">
-                Add
+                Add Link
               </Button>
-              <Button variant="outline" onClick={() => setIsAddingLink(false)}>
+              <Button variant="outline" onClick={() => {
+                setIsAddingLink(false);
+                setNewLink({ platform: "", url: "" });
+              }}>
                 Cancel
               </Button>
             </div>
           </div>
         )}
-
-        <div className="space-y-2 mt-4">
-          {socialLinks.map((link) => (
-            <div key={link.id} className="flex justify-between items-center p-3 bg-muted rounded">
-              <div>
-                <span className="font-bold">{link.platform}</span>
-                <span className="text-sm text-muted-foreground ml-2">{link.url}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDeleteSocialLink(link.id)}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
       </Card>
     </div>
   );

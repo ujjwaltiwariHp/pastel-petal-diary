@@ -44,12 +44,13 @@ const Home = () => {
 
   const fetchAllContent = async () => {
     try {
-      // Fetch owner profile
+      // Fetch owner profile (get the first one if multiple exist)
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("is_owner", true)
-        .maybeSingle();
+        .limit(1)
+        .single();
 
       if (profileError) throw profileError;
       
