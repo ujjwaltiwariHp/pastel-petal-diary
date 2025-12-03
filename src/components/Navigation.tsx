@@ -1,4 +1,4 @@
-import { Home, BookHeart, MessageCircleQuestion, MessageSquare, Plane, CheckSquare, LogOut, LogIn, Gamepad2, Shield } from "lucide-react";
+import { Home, BookHeart, MessageCircleQuestion, Plane, CheckSquare, LogIn, Gamepad2, Shield } from "lucide-react";
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,14 +7,15 @@ import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
+import { motion } from "framer-motion";
 
 const Navigation = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const location = useLocation();
   
-  const sectionIds = ["profile", "diary", "travel", "tasks", "qna", "messages", "games"];
+  const sectionIds = ["profile", "diary", "travel", "tasks", "qna", "games"];
   const activeSection = useScrollSpy(sectionIds);
   const isHomePage = location.pathname === "/";
 
@@ -41,13 +42,8 @@ const Navigation = () => {
     { id: "travel", icon: Plane, label: "Travel" },
     { id: "tasks", icon: CheckSquare, label: "Tasks" },
     { id: "qna", icon: MessageCircleQuestion, label: "Q&A" },
-    { id: "messages", icon: MessageSquare, label: "Messages" },
     { id: "games", icon: Gamepad2, label: "Games" },
   ];
-
-  const adminNavItems = isAdmin
-    ? [{ to: "/admin", icon: Shield, label: "Admin" }]
-    : [];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/50 z-50 md:top-0 md:bottom-auto md:border-b md:border-t-0 shadow-lg">
@@ -56,9 +52,11 @@ const Navigation = () => {
           {/* Main Navigation Items */}
           <div className="flex items-center justify-around md:justify-center gap-1 md:gap-2 flex-1 md:flex-initial">
             {navItems.map((item) => (
-              <button
+              <motion.button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 className={cn(
                   "flex flex-col md:flex-row items-center gap-0.5 md:gap-2 px-2 md:px-4 py-1.5 md:py-2.5 rounded-xl md:rounded-2xl transition-all duration-300",
                   "relative group",
@@ -75,45 +73,38 @@ const Navigation = () => {
                   {item.label}
                 </span>
                 {isHomePage && activeSection === item.id && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary md:hidden" />
+                  <motion.span 
+                    layoutId="activeIndicator"
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary md:hidden" 
+                  />
                 )}
-              </button>
+              </motion.button>
             ))}
           </div>
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-1 md:gap-2 md:ml-4">
-            {adminNavItems.map((item) => (
+            {isAdmin && (
               <NavLink
-                key={item.to}
-                to={item.to}
+                to="/admin"
                 className={cn(
                   "flex flex-col md:flex-row items-center gap-0.5 md:gap-2 px-2 md:px-4 py-1.5 md:py-2.5 rounded-xl md:rounded-2xl transition-all duration-300",
                   "bg-primary/10 border border-primary/30 hover:bg-primary/20"
                 )}
                 activeClassName="bg-primary/25 border-primary"
               >
-                <item.icon className="w-4 h-4 md:w-5 md:h-5" />
+                <Shield className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="text-[10px] md:text-sm font-rounded font-medium">
-                  {item.label}
+                  Admin
                 </span>
               </NavLink>
-            ))}
+            )}
             
             <div className="hidden md:block">
               <ThemeToggle />
             </div>
             
-            {isAdmin && user ? (
-              <Button
-                onClick={signOut}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 md:h-10 md:w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-              >
-                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
-              </Button>
-            ) : !user ? (
+            {!user && (
               <Button
                 onClick={() => navigate("/auth")}
                 variant="ghost"
@@ -122,7 +113,7 @@ const Navigation = () => {
               >
                 <LogIn className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
-            ) : null}
+            )}
           </div>
         </div>
       </div>

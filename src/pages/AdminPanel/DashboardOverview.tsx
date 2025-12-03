@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, Plane, CheckSquare, MessageCircle, Heart } from "lucide-react";
+import { motion } from "framer-motion";
 
 export const DashboardOverview = () => {
   const [stats, setStats] = useState({
@@ -53,64 +54,64 @@ export const DashboardOverview = () => {
   }
 
   const statCards = [
-    {
-      title: "Diary Entries",
-      value: stats.diaryEntries,
-      icon: BookOpen,
-      color: "text-primary",
-    },
-    {
-      title: "Travel Posts",
-      value: stats.travelPosts,
-      icon: Plane,
-      color: "text-secondary",
-    },
-    {
-      title: "Tasks",
-      value: stats.tasks,
-      icon: CheckSquare,
-      color: "text-accent",
-    },
-    {
-      title: "Messages",
-      value: stats.messages,
-      icon: MessageCircle,
-      color: "text-primary",
-    },
-    {
-      title: "Total Likes",
-      value: stats.totalLikes,
-      icon: Heart,
-      color: "text-destructive",
-    },
+    { title: "Diary Entries", value: stats.diaryEntries, icon: BookOpen, color: "text-primary" },
+    { title: "Travel Posts", value: stats.travelPosts, icon: Plane, color: "text-secondary" },
+    { title: "Tasks", value: stats.tasks, icon: CheckSquare, color: "text-accent" },
+    { title: "Messages", value: stats.messages, icon: MessageCircle, color: "text-primary" },
+    { title: "Total Likes", value: stats.totalLikes, icon: Heart, color: "text-destructive" },
   ];
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {statCards.map((stat) => (
-          <Card key={stat.title} className="p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground font-rounded mb-1">
-                  {stat.title}
-                </p>
-                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+        {statCards.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className="p-6 hover:shadow-lg transition-all hover:scale-[1.02]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-rounded mb-1">
+                    {stat.title}
+                  </p>
+                  <motion.p 
+                    className="text-3xl font-bold text-foreground"
+                    initial={{ scale: 0.5 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: index * 0.1 + 0.2, type: "spring" }}
+                  >
+                    {stat.value}
+                  </motion.p>
+                </div>
+                <stat.icon className={`w-12 h-12 ${stat.color}`} />
               </div>
-              <stat.icon className={`w-12 h-12 ${stat.color}`} />
-            </div>
-          </Card>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
-      <Card className="p-6">
-        <h3 className="text-xl font-handwriting font-bold text-foreground mb-4">
-          Quick Actions
-        </h3>
-        <div className="text-muted-foreground font-rounded">
-          Use the tabs above to manage your content, view messages, and configure settings.
-        </div>
-      </Card>
-    </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <Card className="p-6">
+          <h3 className="text-xl font-handwriting font-bold text-foreground mb-4">
+            Quick Actions
+          </h3>
+          <div className="text-muted-foreground font-rounded">
+            Use the tabs above to manage your content, view messages, and configure settings.
+          </div>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 };
