@@ -23,6 +23,7 @@ export type Database = {
           id: string
           is_answered: boolean | null
           is_public: boolean | null
+          profile_id: string | null
           question_text: string
           updated_at: string | null
         }
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           is_answered?: boolean | null
           is_public?: boolean | null
+          profile_id?: string | null
           question_text: string
           updated_at?: string | null
         }
@@ -45,10 +47,19 @@ export type Database = {
           id?: string
           is_answered?: boolean | null
           is_public?: boolean | null
+          profile_id?: string | null
           question_text?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "anonymous_game_questions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       diary_entries: {
         Row: {
@@ -82,6 +93,51 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      game_responses: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          profile_id: string
+          question_id: string
+          responder_name: string | null
+          response_text: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          profile_id: string
+          question_id: string
+          responder_name?: string | null
+          response_text: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          profile_id?: string
+          question_id?: string
+          responder_name?: string | null
+          response_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_responses_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "truth_dare_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media_uploads: {
         Row: {
@@ -224,6 +280,7 @@ export type Database = {
           name: string
           profile_picture_url: string | null
           updated_at: string | null
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -237,6 +294,7 @@ export type Database = {
           name: string
           profile_picture_url?: string | null
           updated_at?: string | null
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -250,6 +308,7 @@ export type Database = {
           name?: string
           profile_picture_url?: string | null
           updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -397,6 +456,7 @@ export type Database = {
           difficulty_level: string | null
           id: string
           is_active: boolean | null
+          profile_id: string | null
           question_text: string
           question_type: string
           updated_at: string | null
@@ -407,6 +467,7 @@ export type Database = {
           difficulty_level?: string | null
           id?: string
           is_active?: boolean | null
+          profile_id?: string | null
           question_text: string
           question_type: string
           updated_at?: string | null
@@ -417,11 +478,20 @@ export type Database = {
           difficulty_level?: string | null
           id?: string
           is_active?: boolean | null
+          profile_id?: string | null
           question_text?: string
           question_type?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "truth_dare_questions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
