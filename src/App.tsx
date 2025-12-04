@@ -6,17 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
 import Home from "./pages/Home";
-import Diary from "./pages/Diary";
-import Travel from "./pages/Travel";
-import Tasks from "./pages/Tasks";
-import QnA from "./pages/QnA";
-import Messages from "./pages/Messages";
-import Navigation from "./components/Navigation";
 import Auth from "./pages/Auth";
-import Games from "./pages/Games";
-import TruthDare from "./pages/TruthDare";
-import AnonymousQuestions from "./pages/AnonymousQuestions";
 import AdminPanel from "./pages/AdminPanel";
+import PublicProfile from "./pages/PublicProfile";
+import PublicTruthDare from "./pages/PublicTruthDare";
+import PublicAnonymous from "./pages/PublicAnonymous";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,18 +23,19 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <div className="min-h-screen bg-gradient-warm">
-            <Navigation />
             <Routes>
+              {/* Home - shows list of profiles or redirects */}
               <Route path="/" element={<Home />} />
-              <Route path="/diary" element={<Diary />} />
-              <Route path="/travel" element={<Travel />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/qna" element={<QnA />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/games" element={<Games />} />
-              <Route path="/games/truth-dare" element={<TruthDare />} />
-              <Route path="/games/anonymous-questions" element={<AnonymousQuestions />} />
+              
+              {/* Public profile routes - no auth needed */}
+              <Route path="/u/:username" element={<PublicProfile />} />
+              <Route path="/u/:username/games/truth-dare" element={<PublicTruthDare />} />
+              <Route path="/u/:username/games/anonymous" element={<PublicAnonymous />} />
+              
+              {/* Auth */}
               <Route path="/auth" element={<Auth />} />
+              
+              {/* Admin panel - protected */}
               <Route
                 path="/admin"
                 element={
@@ -49,7 +44,8 @@ const App = () => (
                   </ProtectedAdminRoute>
                 }
               />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              
+              {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
