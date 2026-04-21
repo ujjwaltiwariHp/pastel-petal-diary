@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Instagram, Twitter, Linkedin, Github, Youtube, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface SocialLink {
   id: string;
@@ -26,8 +27,10 @@ export const SocialLinksDisplay = ({ profileId }: { profileId: string }) => {
   const [links, setLinks] = useState<SocialLink[]>([]);
 
   useEffect(() => {
-    fetchLinks();
+    if (profileId) fetchLinks();
   }, [profileId]);
+
+  useRealtimeSync(["social_links"], fetchLinks, !!profileId);
 
   const fetchLinks = async () => {
     try {

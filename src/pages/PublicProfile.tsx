@@ -13,6 +13,7 @@ import { PageLoader } from "@/components/PageLoader";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 const PublicProfile = () => {
   const { username } = useParams();
@@ -29,6 +30,15 @@ const PublicProfile = () => {
       fetchProfileByUsername();
     }
   }, [username]);
+
+  // Live-sync any admin updates to this profile and its content
+  useRealtimeSync(
+    ["profiles", "social_links", "diary_entries", "travel_posts", "tasks", "qna_questions"],
+    () => {
+      if (username) fetchProfileByUsername();
+    },
+    !!username
+  );
 
   const fetchProfileByUsername = async () => {
     try {

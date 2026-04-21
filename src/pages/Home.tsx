@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageLoader } from "@/components/PageLoader";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface Profile {
   id: string;
@@ -26,6 +27,9 @@ const Home = () => {
   useEffect(() => {
     fetchProfiles();
   }, [user]);
+
+  // Live-update the profiles grid when admins make changes
+  useRealtimeSync(["profiles"], fetchProfiles);
 
   const fetchProfiles = async () => {
     try {
