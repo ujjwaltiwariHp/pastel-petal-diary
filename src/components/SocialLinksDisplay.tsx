@@ -30,7 +30,7 @@ export const SocialLinksDisplay = ({ profileId }: { profileId: string }) => {
     if (profileId) fetchLinks();
   }, [profileId]);
 
-  useRealtimeSync(["social_links"], fetchLinks, !!profileId);
+  useRealtimeSync(["social_links"], () => fetchLinks(), !!profileId);
 
   const fetchLinks = async () => {
     try {

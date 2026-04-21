@@ -29,7 +29,7 @@ const Home = () => {
   }, [user]);
 
   // Live-update the profiles grid when admins make changes
-  useRealtimeSync(["profiles"], fetchProfiles);
+  useRealtimeSync(["profiles"], () => fetchProfiles());
 
   const fetchProfiles = async () => {
     try {
